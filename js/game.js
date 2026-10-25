@@ -366,7 +366,7 @@
   const matchEl = $('#match'), boxEl = $('#matchbox');
   const M = { x: 270, y: 760, home: { x: 270, y: 760 }, lit: false, drag: false, rot: 0, a: 0 };
   const STRIP = { x0: 270, x1: 395, y0: 830, y1: 930 };
-  const STRIKE = { x: 352, y: 832, rot: -35 };
+  const STRIKE = { x: 382, y: 890, rot: 80 };
   let tapCount = 0;
 
   S.girl = {
@@ -389,9 +389,8 @@
     up() {},
     // 流星滑过火柴盒，擦出火星，擦几下火柴就亮了（全自动，流畅缓动）
     strikeFx(x, y, t) {
-      const n = 3 + Math.floor(rand(0, 3));
-      fx.burst('spark', x, y, n, () => ({ vx: rand(-140, 140), vy: rand(-240, -80), g: 320, life: rand(0.25, 0.6), size: 1.5, color: '255,190,90' }));
-      A.strike(0.3);
+      const n = 2 + Math.floor(rand(0, 2));
+      fx.burst('spark', x, y, n, () => ({ vx: rand(-120, 120), vy: rand(-220, -80), g: 320, life: rand(0.25, 0.5), size: 1.5, color: '255,190,90' }));
     },
     ignite() {
       M.lit = true; M.dwell = 0; M.grab = false;
@@ -437,7 +436,7 @@
       this.sk += dt;
       const t = this.sk;
       if (t < 0) return;
-      const SWIPE = 0.7, GAP = 0.25, SX0 = 300, SX1 = 382, SY = 836;
+      const SWIPE = 0.7, GAP = 0.25, SX0 = 300, SX1 = 382, SY = 890;
       const n = Math.floor(t / (SWIPE + GAP));
       const local = t - n * (SWIPE + GAP);
       if (n >= 4) { this.ignite(); return; }
@@ -445,7 +444,9 @@
         const forward = n % 2 === 0;
         const u = local / SWIPE, e = 0.5 - 0.5 * Math.cos(Math.PI * u);
         const x = forward ? SX0 + (SX1 - SX0) * e : SX1 - (SX1 - SX0) * e;
-        ST.hover(x, SY - 4, 0.25);
+        ST.hover(x, SY - 26, 0.25);
+        M.x = x; M.y = SY;
+        if (local - dt < 0) A.strike();
         if (Math.floor(local / 0.08) !== Math.floor((local - dt) / 0.08)) this.strikeFx(x + 4, SY - 10, t);
         M.rot = STRIKE.rot + Math.sin(local * 40) * 1.2;
         if (local - dt < 0 && n === 0) narr('流星划过火柴盒，擦出火星……', 0);
@@ -647,7 +648,7 @@
     enter() {
       B.p = 0; B.t = 0; B.puffT = 0; B.puffLeft = 0; B.puffLvl = 0; B.hold = 0; B.wasDown = false; B.full = false; B.done = false;
       title('吹蜡烛时间！');
-      narr('第四幕 · 按住屏幕吸气，松手吹蜡烛', 0);
+      narr('第四幕 · 按住屏幕一直吹，把进度条吹满', 0);
       show(ui.meter, true); ui.meterI.style.width = '0%';
       boy.el.classList.remove('bob');
       ST.hover(wick().x + 90, wick().y - 70, 0.9);
@@ -658,29 +659,12 @@
       if (B.done) return;
       B.t += dt;
       const down = G.ptr.down || G.key;
-      // 按住：吸气蓄力（越久越足），松手：吹出去
-      if (down) {
-        if (!B.wasDown) { B.hold = 0; B.full = false; narr('吸气…憋足了再松手', 0); }
-        B.wasDown = true;
-        B.hold += dt;
-        if (!B.full && B.hold >= 1.2) { B.full = true; narr('憋足了，松手吹！', 0); A.ding(1); }
-      } else if (B.wasDown) {
-        B.wasDown = false;
-        if (B.hold > 0.3) {
-          B.puffLvl = clamp(B.hold / 1.2, 0.35, 1);
-          B.puffLeft = 0.5 + B.puffLvl * 0.8;
-          if (!B.said) { B.said = true; sayBoy('呼————！', 1400); }
-          else sayBoy(B.puffLvl > 0.8 ? '呼！' : '再来一口！', 1000);
-        }
-        B.hold = 0;
-        narr('按住屏幕吸气，松手吹蜡烛', 0);
-      }
-      let b = 0;
-      if (B.puffLeft > 0) {
-        B.puffLeft -= dt;
-        b = B.puffLvl;
-        B.p = clamp(B.p + b * dt * 0.5, 0, 1);
-      } else B.p = clamp(B.p - dt * 0.12, 0, 1);
+      if (down && !B.wasDown) { B.wasDown = true; if (!B.said) { B.said = true; sayBoy('呼————！', 1400); } }
+      if (!down && B.wasDown) B.wasDown = false;
+      // 按住任意位置持续吹，松手就停
+      const b = down ? 0.85 + 0.15 * Math.sin(B.t * 22) : 0;
+      if (down) B.p = clamp(B.p + dt * 0.24, 0, 1);
+      else B.p = clamp(B.p - dt * 0.12, 0, 1);
       B.b = b;
       A.blowLevel(b);
       boy.el.classList.toggle('puff', b > 0.15);
@@ -688,7 +672,7 @@
       fCake.shake = b * 0.8;
       B.puffT -= dt;
       if (b > 0.3 && B.puffT <= 0) {
-        B.puffT = 0.45;
+        B.puffT = 0.2;
         const m = mouth();
         fx.puff(m.x - 10, m.y, -1, 0.6 + b * 0.5, m.x - fCake.x);
         A.puffOnce(b);
@@ -721,23 +705,44 @@
   };
 
   // ===== 场景 5：庆祝 + 天灯 =====
-  const LN = { on: false, lit: false, phase: 'idle', x: 270, y: 760, t: 0, trail: 0 };
+  const LN = { on: false, lit: false, phase: 'idle', x: 270, y: 760, t: 0, trail: 0, vx: 0, tilt: 0, spin: 0, rings: [], orbs: [], orbT: 0.6, got: 0 };
   fx.hooks = fx.hooks || [];
   fx.hooks.push((ctx) => {
     if (!LN.on) return;
-    ctx.save(); ctx.translate(LN.x, LN.y); ctx.rotate(Math.sin(LN.t * 1.6) * 0.04);
-    if (LN.lit) {
-      const g = ctx.createRadialGradient(0, 0, 20, 0, 0, 170);
-      g.addColorStop(0, 'rgba(255,170,80,.6)'); g.addColorStop(1, 'rgba(255,120,40,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 170, 0, TAU); ctx.fill();
-    }
+    LN.rings.forEach((r) => {
+      ctx.strokeStyle = `rgba(255,220,140,${r.a})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, TAU); ctx.stroke();
+    });
+    LN.orbs.forEach((o) => {
+      const pulse = 0.7 + 0.3 * Math.sin(LN.t * 5 + o.ph);
+      ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(LN.t * 1.5 + o.ph);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 22);
+      g.addColorStop(0, `rgba(255,240,180,${pulse})`); g.addColorStop(1, 'rgba(255,200,90,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 22, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#fff3c4'; ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const r = i % 2 ? 3 : 7, a = (i / 10) * TAU;
+        ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+      ctx.closePath(); ctx.fill(); ctx.restore();
+    });
+    ctx.save(); ctx.translate(LN.x, LN.y);
+    ctx.rotate(LN.tilt + Math.sin(LN.t * 1.6) * 0.04 + LN.spin * TAU);
+    const glow = ctx.createRadialGradient(0, 0, 20, 0, 0, 190 + Math.sin(LN.t * 6) * 10);
+    glow.addColorStop(0, 'rgba(255,170,80,.7)'); glow.addColorStop(1, 'rgba(255,120,40,0)');
+    ctx.fillStyle = LN.lit ? glow : 'transparent';
+    ctx.beginPath(); ctx.arc(0, 0, 200, 0, TAU); ctx.fill();
     ctx.fillStyle = LN.lit ? '#ffd9a0' : '#e8dcc8';
     ctx.beginPath(); ctx.ellipse(0, 0, 34, 44, 0, 0, TAU); ctx.fill();
     ctx.strokeStyle = 'rgba(170,80,40,.45)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.ellipse(0, 0, 34, 44, 0, 0, TAU); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-34, 0); ctx.lineTo(34, 0); ctx.stroke();
     ctx.fillStyle = '#5a3a24'; ctx.fillRect(-12, 44, 24, 8);
-    if (LN.lit) { ctx.fillStyle = '#fff1b0'; ctx.beginPath(); ctx.ellipse(0, 26, 7, 12, 0, 0, TAU); ctx.fill(); }
+    if (LN.lit) {
+      const f = 1 + Math.sin(LN.t * 23) * 0.12 + Math.random() * 0.08;
+      ctx.fillStyle = '#fff1b0'; ctx.beginPath(); ctx.ellipse(0, 26, 7 * f, 12 * f, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#ff9a3c'; ctx.beginPath(); ctx.ellipse(0, 28, 4 * f, 8 * f, 0, 0, TAU); ctx.fill();
+    }
     ctx.restore();
   });
 
@@ -798,14 +803,27 @@
   S.catch = {
     enter() {
       const b = bag();
-      Object.assign(LN, { on: true, lit: false, phase: 'light', x: b.x - 40, y: b.y - 90, t: 0, trail: 0 });
+      Object.assign(LN, { on: true, lit: false, phase: 'light', x: b.x - 40, y: b.y - 90, t: 0, trail: 0, vx: 0, tilt: 0, spin: 0, rings: [], orbs: [], orbT: 0.6, got: 0 });
       ST.hover(270, 700, 0.6);
       title('天灯');
       narr('第六幕 · 星星先替天灯点亮……', 3200);
     },
+    down(x, y) {
+      if (LN.phase !== 'fly') return;
+      if (Math.hypot(x - LN.x, y - LN.y) < 80) {
+        LN.spin = 1;
+        LN.rings.push({ x: LN.x, y: LN.y, r: 30, a: 1 });
+        fx.stars(LN.x, LN.y, 12, 90);
+        A.ding(LN.got % 8);
+        sayGirl(['呀，好亮！', '飞吧～', '再高一点！'][LN.got % 3], 1200);
+      }
+    },
     update(dt) {
       if (LN.phase === 'done') return;
       LN.t += dt;
+      LN.spin = Math.max(0, LN.spin - dt * 1.6);
+      LN.rings.forEach((r) => { r.r += 160 * dt; r.a -= dt * 1.4; });
+      LN.rings = LN.rings.filter((r) => r.a > 0);
       if (LN.phase === 'light') {
         const k = 1 - Math.exp(-dt * 2.4);
         LN.x += (270 - LN.x) * k;
@@ -818,6 +836,7 @@
           narr('天灯亮啦！用手指拖动它，\n把它送上夜空', 4200);
         }
       } else if (LN.phase === 'fly') {
+        const px = LN.x;
         if (G.ptr.down) {
           const k = 1 - Math.exp(-dt * 3);
           LN.x += (G.ptr.x - LN.x) * k;
@@ -827,9 +846,31 @@
         }
         LN.y -= 60 * dt;
         LN.x = clamp(LN.x, 50, BD.W - 50);
+        LN.vx += ((LN.x - px) / Math.max(dt, 0.001) - LN.vx) * (1 - Math.exp(-dt * 6));
+        LN.tilt += (clamp(LN.vx * 0.0009, -0.35, 0.35) - LN.tilt) * (1 - Math.exp(-dt * 6));
         ST.hover(LN.x, LN.y - 110, 0.5);
         LN.trail -= dt;
-        if (LN.trail <= 0) { LN.trail = 0.12; fx.stars(LN.x + rand(-10, 10), LN.y + 50, 1, 16); }
+        if (LN.trail <= 0) {
+          LN.trail = 0.1;
+          fx.stars(LN.x + rand(-14, 14), LN.y + 50, 2, 22);
+        }
+        LN.orbT -= dt;
+        if (LN.orbT <= 0) {
+          LN.orbT = rand(0.7, 1.1);
+          LN.orbs.push({ x: rand(60, BD.W - 60), y: BD.H + 30, vy: -rand(40, 70), ph: rand(0, TAU) });
+        }
+        LN.orbs.forEach((o) => { o.y += o.vy * dt; o.x += Math.sin(LN.t * 2 + o.ph) * 18 * dt; });
+        LN.orbs = LN.orbs.filter((o) => {
+          if (o.y < -40) return false;
+          if (Math.hypot(o.x - LN.x, o.y - LN.y) < 52) {
+            LN.got++;
+            fx.stars(o.x, o.y, 14, 70);
+            A.ding(LN.got % 8);
+            toast(`⭐ 收集星星 ${LN.got}`, 900);
+            return false;
+          }
+          return true;
+        });
         if (LN.y < 190) this.finish();
       }
     },
@@ -837,9 +878,10 @@
       LN.phase = 'done'; LN.on = false;
       fx.stars(LN.x, LN.y, 14, 120);
       fx.confetti(BD.W / 2, 300, 60);
+      fx.fireworks(4, 230);
       A.sparkle(8);
       title('愿望升空啦！');
-      toast('天灯带着祝福飞上天 ✨', 2000);
+      toast(`愿望升空 ✨ 收集 ${LN.got} 颗星`, 2400);
       journey('wish', '第七幕', '许愿泡泡', '天灯带着祝福飞上天，\n愿望一个个都接住～', 270, 640, 2400);
     },
   };

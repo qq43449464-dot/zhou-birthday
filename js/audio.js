@@ -70,8 +70,7 @@
 
   A.strike = () => {
     const t = now();
-    noiseBurst(t, 0.28, { f: 3500, fEnd: 1200, q: 0.8, gain: 0.35, type: 'highpass' });
-    for (let i = 0; i < 6; i++) tone(2000 + Math.random() * 2500, t + Math.random() * 0.2, 0.04, { type: 'square', gain: 0.03 });
+    noiseBurst(t, 0.16, { f: 1800, fEnd: 900, q: 1.5, gain: 0.1, type: 'bandpass', attack: 0.03 });
   };
   A.ignite = () => {
     const t = now();

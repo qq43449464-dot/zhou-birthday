@@ -33,7 +33,7 @@ body{font-family:var(--fun);color:#fff}
 #matchbox{left:150px;top:858px;width:240px;height:96px;border-radius:8px;background:linear-gradient(135deg,#b3321f,#7d1e12);border:3px solid #e8c36a;box-shadow:0 10px 24px rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:5;opacity:0;overflow:hidden}
 #matchbox .strip{position:absolute;right:0;top:0;bottom:0;width:120px;background:repeating-linear-gradient(90deg,#3a2a24 0 3px,#4d3830 3px 6px);border-left:3px solid #e8c36a}
 #matchbox span{position:absolute;left:18px;font:900 22px/1 'Arial Black',Arial,sans-serif;color:#ffe9a8;letter-spacing:3px;text-shadow:0 2px 0 rgba(0,0,0,.4)}
-#match{left:0;top:0;width:12px;height:170px;transform-origin:50% 0;z-index:4;opacity:0;pointer-events:none}
+#match{left:0;top:0;width:12px;height:170px;transform-origin:50% 0;z-index:6;opacity:0;pointer-events:none}
 #match i{position:absolute;left:1px;top:0;width:10px;height:14px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 40% 35%,#ff7a5a,#a31f10 70%)}
 #match b{position:absolute;left:3px;top:10px;width:6px;height:160px;background:linear-gradient(90deg,#d9a86a,#f2cb91 50%,#c08c51);border-radius:2px}
 #match.dragging{z-index:7}
