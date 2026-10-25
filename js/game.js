@@ -432,31 +432,28 @@
       if (this.phase === 'carry') ST.hover(M.x + 62, M.y - 78, 0.8);
     },
     // 时间线：流星先在火柴盒上方停住，然后左右来回滑过盒面，每滑一次擦出火星，擦够四次火柴点亮
+    // 一次干脆的划擦：流星停在火柴头上方，一下平滑划过火柴盒擦出火，随即点亮
     updateStrike(dt) {
       this.sk += dt;
       const t = this.sk;
       if (t < 0) return;
-      const SWIPE = 0.7, GAP = 0.25, SX0 = 300, SX1 = 382, SY = 890;
-      const n = Math.floor(t / (SWIPE + GAP));
-      const local = t - n * (SWIPE + GAP);
-      if (n >= 4) { this.ignite(); return; }
-      if (local < SWIPE) {
-        const forward = n % 2 === 0;
-        const u = local / SWIPE, e = 0.5 - 0.5 * Math.cos(Math.PI * u);
-        const x = forward ? SX0 + (SX1 - SX0) * e : SX1 - (SX1 - SX0) * e;
-        ST.hover(x, SY - 26, 0.25);
-        M.x = x; M.y = SY;
-        if (local - dt < 0) A.strike();
-        if (Math.floor(local / 0.08) !== Math.floor((local - dt) / 0.08)) this.strikeFx(x + 4, SY - 10, t);
-        M.rot = STRIKE.rot + Math.sin(local * 40) * 1.2;
-        if (local - dt < 0 && n === 0) narr('流星划过火柴盒，擦出火星……', 0);
-      } else {
-        ST.hover(SX1 + 12, SY - 40, 0.6);
-        M.rot = STRIKE.rot;
+      const PRE = 0.3, SWIPE = 0.42, SX0 = 300, SX1 = 382, SY = 890;
+      if (t < PRE) {
+        ST.hover(SX0, SY - 26, 0.25);
+        M.x = SX0; M.y = SY; M.rot = STRIKE.rot;
+        return;
       }
-      if (n === 2 && local < dt && this.strokes < 3) {
-        this.strokes = 3;
-        narr('再划几下，火柴就亮了！', 2000);
+      const s = t - PRE;
+      if (s < SWIPE) {
+        const u = s / SWIPE, e = u * u * (3 - 2 * u);
+        const x = SX0 + (SX1 - SX0) * e;
+        ST.hover(x, SY - 26, 0.3);
+        M.x = x; M.y = SY;
+        M.rot = STRIKE.rot + Math.sin(s * 50) * 1.2;
+        if (s - dt < 0) { A.strike(); narr('流星划过火柴盒，擦出火星……', 0); }
+        if (Math.floor(s / 0.05) !== Math.floor((s - dt) / 0.05)) this.strikeFx(x + 4, SY - 10, t);
+      } else {
+        this.ignite();
       }
     },
 
