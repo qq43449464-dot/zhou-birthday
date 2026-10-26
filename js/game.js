@@ -366,7 +366,7 @@
   const matchEl = $('#match'), boxEl = $('#matchbox');
   const M = { x: 270, y: 760, home: { x: 270, y: 760 }, lit: false, drag: false, rot: 0, a: 0 };
   const STRIP = { x0: 270, x1: 395, y0: 830, y1: 930 };
-  const STRIKE = { x: 382, y: 890, rot: 80 };
+  const STRIKE = { x: 382, y: 890, rot: 74 };
   const STRIKE_END_X = 266;
   let tapCount = 0;
 
@@ -438,16 +438,17 @@
       this.sk += dt;
       const t = this.sk;
       if (t < 0) return;
-      const PRE = 0.2, SWIPE = 0.4, SX0 = STRIKE.x, SX1 = STRIKE_END_X, SY = STRIKE.y;
+      const PRE = 0.12, SWIPE = 0.3, SX0 = STRIKE.x, SX1 = STRIKE_END_X, SY = STRIKE.y;
       if (t < PRE) {
-        ST.hover(SX0, SY - 26, 0.5);
+        ST.x = SX0; ST.y = SY - 26; ST.hover(SX0, SY - 26, 0.5);
+        M.x = SX0; M.y = SY; M.rot = STRIKE.rot;
         return;
       }
       const s = t - PRE;
       if (s < SWIPE) {
-        const u = s / SWIPE, e = u * u;
+        const u = s / SWIPE, e = 1 - Math.pow(1 - u, 2);
         const x = SX0 + (SX1 - SX0) * e;
-        ST.hover(x, SY - 26, 0.7);
+        ST.x = x; ST.y = SY - 26; ST.hover(x, SY - 26, 0.7);
         M.x = x; M.y = SY; M.rot = STRIKE.rot;
         if (s - dt < 0) { A.strike(); narr('流星划过火柴盒，擦出火星……', 1600); }
         if (Math.floor(s / 0.04) !== Math.floor((s - dt) / 0.04)) this.strikeFx(M.x + 4, SY - 10, t);
